@@ -33,15 +33,15 @@ describe('LibrosController', () => {
     expect(espia).not.toHaveBeenCalled();
   });
 
-  it('con header, va a buscar los libros al 3001', async () => {
-    const espia = jest
-      .fn()
-      .mockResolvedValue({ json: () => Promise.resolve([{ id: 1 }]) });
+  // Desde L3 el gateway valida el token contra Cognito: un texto cualquiera ya no pasa, y el
+  // microservicio (3001) no se entera de que alguien lo intentó.
+  it('con un token que no es un JWT responde 401 y no llama al 3001', async () => {
+    const espia = jest.fn();
     global.fetch = espia;
 
-    await expect(controller.listar('Bearer holaquetal')).resolves.toEqual([
-      { id: 1 },
-    ]);
-    expect(espia).toHaveBeenCalledWith('http://localhost:3001/libros');
+    await expect(
+      controller.listar('Bearer holaquetal'),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(espia).not.toHaveBeenCalled();
   });
 });
