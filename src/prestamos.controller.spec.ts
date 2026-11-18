@@ -19,16 +19,15 @@ describe('PrestamosController', () => {
     expect(espia).not.toHaveBeenCalled();
   });
 
-  // El puerto, que es el error traicionero del paso 1.5 de L1.
-  it('con header, va a buscar los préstamos al 3002 y no al 3001', async () => {
-    const espia = jest
-      .fn()
-      .mockResolvedValue({ json: () => Promise.resolve([{ id: 501 }]) });
+  // Desde L3 el gateway valida el token contra Cognito: un texto cualquiera ya no pasa, y el
+  // microservicio (3002) no se entera de que alguien lo intentó.
+  it('con un token que no es un JWT responde 401 y no llama al 3002', async () => {
+    const espia = jest.fn();
     global.fetch = espia;
 
-    await expect(controller.listar('Bearer holaquetal')).resolves.toEqual([
-      { id: 501 },
-    ]);
-    expect(espia).toHaveBeenCalledWith('http://localhost:3002/prestamos');
+    await expect(
+      controller.listar('Bearer holaquetal'),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(espia).not.toHaveBeenCalled();
   });
 });
